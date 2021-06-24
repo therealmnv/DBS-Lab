@@ -1,0 +1,28 @@
+select count(person.driver_id)
+from person,accident,participates
+where accident.report_number = participates.report_number
+and participates.driver_id = person.driver_id
+and extract (year from ACCD_DATE) = '2008';
+
+select count(accident.report_number)
+from car,accident,participates
+where car.regno = participates.regno
+and participates.report_number = accident.report_number
+and car.model = 'FERRARI';
+
+select name, count(report_number), sum(damage_amount)
+from person natural join participates natural join accident
+group by name
+order by sum(damage_amount) desc;
+
+select name, count(regno) as accidents
+from person natural join participates natural join accident
+where extract(year from accd_date)=2005
+group by name
+having count(regno)>2;
+
+select driver_id as ID, name as NAME
+from person natural join owns
+minus
+select driver_id as ID ,name as NAME
+from person natural join participates;

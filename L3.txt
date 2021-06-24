@@ -1,0 +1,117 @@
+create table student(
+regno varchar(10) PRIMARY KEY,
+name varchar(20),
+major varchar(20),
+bdate date);
+
+create table course(
+courseid int PRIMARY KEY,
+cname varchar(10),
+dept varchar(15));
+
+create table enroll(
+regno varchar(10),
+courseid int,
+PRIMARY KEY(courseid,regno),
+FOREIGN KEY(regno) references student on delete cascade,
+FOREIGN KEY(courseid) references course on delete cascade);
+
+create table text(
+book_isbn int PRIMARY KEY,
+book_title varchar(15),
+publisher varchar(15),
+author varchar(15));
+
+create table book_adoption(
+courseid int,
+sem int,
+book_isbn int,
+PRIMARY KEY(courseid,book_isbn),
+FOREIGN KEY(courseid) references course on delete cascade,
+FOREIGN KEY(book_isbn) references text on delete cascade);
+
+insert into student values('1','manav','cse',to_date('02-03-2001','dd-mm-yyyy'));
+insert into student values('2','snkt','aero',to_date('03-03-2001','dd-mm-yyyy'));
+insert into student values('3','yash','mech',to_date('03-03-2001','dd-mm-yyyy'));
+insert into student values('4','kvsh','chem',to_date('04-03-2001','dd-mm-yyyy'));
+insert into student values('5','frzn','bio',to_date('05-03-2001','dd-mm-yyyy'));
+
+insert into course values(10,'DBS','ICT');
+insert into course values(11,'DAA','ICT');
+insert into course values(12,'PHY','MECH');
+insert into course values(13,'MATH','BIO');
+insert into course values(14,'OS','CSE');
+
+insert into enroll values('1',10);
+insert into enroll values('1',12);
+insert into enroll values('2',11);
+insert into enroll values('3',13);
+insert into enroll values('4',14);
+
+insert into text values(100,'BS GREWAL','bookHouse','forouzan');
+insert into text values(200,'Networks','bookHouse','forouzan');
+insert into text values(300,'RK Laxman','winners','RK Naraya');
+insert into text values(400,'Electric','Bhouse','DC Pandey');
+insert into text values(500,'MathProf','grants','Ram');
+
+insert into book_adoption values(10,2,100);
+insert into book_adoption values(10,2,200);
+insert into book_adoption values(11,3,200);
+insert into book_adoption values(12,4,300);
+insert into book_adoption values(13,5,400);
+insert into book_adoption values(14,6,500);
+
+select courseid, cname
+from (select courseid, cname, count(book_isbn) as c
+from book_adoption natural join course
+group by (courseid, cname))
+where c>1;
+
+select distinct dept, book_title
+from book_adoption natural join course natural join text
+where publisher='bookHouse';
+
+select name, regno
+from ( select name, regno, count(dept) as d
+from student natural join course natural join enroll
+group by (regno, name))
+where d>1;
+
+select * from student
+where regno not in
+(select regno 
+from student natural join enroll);
+
+select book_title
+from (select *
+from student natural join course natural join enroll natural join book_adoption natural join text);
+
+select distinct cname
+from (select * 
+from course natural join book_adoption natural join text
+where publisher = 'bookHouse');
+
+select name, max_books 
+from (select name, count(book_isbn) as max_books
+from enroll natural join student natural join book_adoption
+group by name
+order by max_books desc)
+where rownum = 1;
+
+select publisher, count(book_isbn) as num_books
+from text
+group by publisher;
+
+select regno, name, courseid
+from student natural join enroll
+where courseid in 
+(select book_adoption.courseid from enroll, book_adoption
+where enroll.courseid = book_adoption.courseid);
+
+create view course_with_books as 
+select regno, name, courseid from 
+student natural join enroll 
+where courseid in 
+(select book_adoption.courseid from 
+enroll, book_adoption
+where enroll.courseid=book_adoption.courseid);
